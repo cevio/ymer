@@ -14,6 +14,17 @@ module.exports = class Cache {
     }
   }
 
+  async remove(key, args) {
+    const { domain, pathname } = util.formatCacheKey(key);
+    const name = this.urlPen.select(domain, ...pathname).toString(args);
+    const redis = await this.yme.redis();
+    const exists = await redis.exists(name);
+
+    if (exists) {
+      await redis.del(name);
+    }
+  }
+
   async build(key, args, resource) {
     const { domain, pathname } = util.formatCacheKey(key);
     const name = this.urlPen.select(domain, ...pathname).toString(args);
