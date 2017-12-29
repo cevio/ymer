@@ -5,30 +5,7 @@ const Uri = require('./uri');
 const Redis = require('node-redis-connection-pool');
 const SingleProcessPool = require('./pool');
 const debug = require('debug')('YMER');
-
-class CachePen {
-  constructor() {
-    this.stacks = {};
-  }
-
-  set(name, time = 0, fn) {
-    if (typeof time === 'function') {
-      fn = time;
-      time = 0;
-    }
-    this.stacks[name] = {
-      time, fn
-    };
-  }
-
-  get(name) {
-    return this.stacks[name];
-  }
-
-  del(name) {
-    delete this.stacks[name];
-  }
-}
+const CachePen = require('./cache-pen');
 
 module.exports = class Ymer {
   constructor(options = {}) {
@@ -37,10 +14,6 @@ module.exports = class Ymer {
     this.redisPool = new Redis(options.redis);
     this.mysqlPool = MySQL.createPool(options.mysql);
     this.stacks = [];
-    process.on('SIGINT', () => {
-      this.destroy();
-      process.exit(0);
-    });
   }
 
   get length() {
