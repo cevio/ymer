@@ -1,6 +1,5 @@
 const ObjectProxy = require('./proxy');
 const debug = require('debug')('POOL:MySQL');
-const flatten = require('flatten');
 
 class MySQL {
   constructor(conn) {
