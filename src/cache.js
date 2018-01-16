@@ -83,20 +83,10 @@ module.exports = class Cache {
     const { domain, pathname } = util.formatCacheKey(key);
     const name = this.urlPen.select(domain, ...pathname).toString(args);
     const redis = await this.yme.redis();
-    const exists = await redis.exists(name);
+    const exists = await this.compress(await redis.exists(name));
 
     if (exists) {
-      let values = await redis.hgetall(name);
-      if (values instanceof Multi) {
-        values = await new Promise((resolve, reject) => {
-          values.exec_atomic((err, replies) => {
-            if (err) return reject(err);
-            const value = replies.slice(1);
-            if (value.length > 1) return resolve(value);
-            resolve(value[0]);
-          });
-        });
-      }
+      const values = await this.compress(await redis.hgetall(name));
       if (values.__Stringify__) {
         return util.parse(values.__Stringify__, values.value);
       } else if (values.__ArrayStringify__) {
@@ -107,5 +97,19 @@ module.exports = class Cache {
     } else {
       return await this.build(key, args);
     }
+  }
+
+  async compress(values) {
+    if (values instanceof Multi) {
+      values = await new Promise((resolve, reject) => {
+        values.exec_atomic((err, replies) => {
+          if (err) return reject(err);
+          const value = replies.slice(1);
+          if (value.length > 1) return resolve(value);
+          resolve(value[0]);
+        });
+      });
+    }
+    return values;
   }
 }
