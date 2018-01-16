@@ -1,6 +1,6 @@
 {
   "name": "ymer",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "ymer: a mysql+redis framework for resolving auto pool manage",
   "main": "src/index.js",
   "scripts": {
@@ -27,7 +27,6 @@
     "koa-router": "^7.3.0"
   },
   "dependencies": {
-    "flatten": "^1.0.2",
     "mysql": "^2.15.0",
     "node-redis-connection-pool": "^2.9.0",
     "path-to-regexp": "^2.1.0",

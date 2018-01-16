@@ -46,7 +46,6 @@ class MySQL {
     let sql = `UPDATE ${table} SET ${fields.join(',')}`;
     if ( where ){
       sql += ' WHERE ' + where;
-      wheres = flatten(wheres ? wheres : []);
       values = values.concat(wheres);
     }
     return await this.exec(sql, values);
@@ -56,7 +55,6 @@ class MySQL {
     let sql = `DELETE FROM ${table}`, values = [];
     if ( where ){
         sql += ' WHERE ' + where;
-        wheres = flatten(wheres ? wheres : []);
         values = values.concat(wheres);
     }
     return await this.exec(sql, values);
