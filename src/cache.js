@@ -1,4 +1,5 @@
 const util = require('./util');
+const Multi = require('redis/lib/multi');
 
 module.exports = class Cache {
   constructor(yme) {
@@ -87,7 +88,14 @@ module.exports = class Cache {
     if (exists) {
       let values = await redis.hgetall(name);
       if (values instanceof Multi) {
-        values = await values.execAsync();
+        values = await new Promise((resolve, reject) => {
+          values.exec_atomic((err, replies) => {
+            if (err) return reject(err);
+            const value = replies.slice(1);
+            if (value.length > 1) return resolve(value);
+            resolve(value[0]);
+          });
+        });
       }
       if (values.__Stringify__) {
         return util.parse(values.__Stringify__, values.value);
