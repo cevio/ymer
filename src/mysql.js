@@ -9,6 +9,7 @@ class MySQL {
 
   async exec(sql, ...args) {
     return new Promise((resolve, reject) => {
+      debug('EXEC SQL:', sql, args);
       this.conn.query(sql, args, (err, rows) => {
         if ( err ) return reject(err);
         resolve(rows);
@@ -26,6 +27,7 @@ class MySQL {
     }
 
     for (let i = 0; i < data.length; i++) {
+      debug('INSERT SQL:', `INSERT INTO ${table} SET ?`, data[i]);
       result.push(await this.exec(`INSERT INTO ${table} SET ?`, data[i]));
     }
 
@@ -47,7 +49,8 @@ class MySQL {
       sql += ' WHERE ' + where;
       values = values.concat(wheres);
     }
-    return await this.exec(sql, values);
+    debug('UPDATE SQL:', sql, values);
+    return await this.exec(sql, ...values);
   }
 
   async ['delete'](table, where, wheres){
@@ -56,7 +59,8 @@ class MySQL {
         sql += ' WHERE ' + where;
         values = values.concat(wheres);
     }
-    return await this.exec(sql, values);
+    debug('DELETE SQL:', sql, values);
+    return await this.exec(sql, ...values);
   }
 
   async begin() {
