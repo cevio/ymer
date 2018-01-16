@@ -85,7 +85,10 @@ module.exports = class Cache {
     const exists = await redis.exists(name);
 
     if (exists) {
-      const values = await redis.hgetall(name);
+      let values = await redis.hgetall(name);
+      if (values instanceof Multi) {
+        values = await values.execAsync();
+      }
       if (values.__Stringify__) {
         return util.parse(values.__Stringify__, values.value);
       } else if (values.__ArrayStringify__) {
