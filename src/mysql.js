@@ -53,7 +53,7 @@ class MySQL {
     return await this.exec(sql, ...values);
   }
 
-  async ['delete'](table, where, wheres){
+  async ['delete'](table, where, ...wheres){
     let sql = `DELETE FROM ${table}`, values = [];
     if ( where ){
         sql += ' WHERE ' + where;
