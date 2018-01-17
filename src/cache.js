@@ -59,10 +59,8 @@ module.exports = class Cache {
             else {
               if (Object.keys(result).length) {
                 await redis.hmset(name, util.encode(result));
-              } else {
-                await redis.hmset(name, {});
+                await this.expire(name, ret.time);
               }
-              await this.expire(name, ret.time);
             }
           }
           // 其余任何类型直接转化为字符串存入
