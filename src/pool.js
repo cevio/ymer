@@ -20,7 +20,7 @@ module.exports = class SingleProcessPool {
   }
 
   next(cb) {
-    this.afters.push(cb);   
+    this.nexts.push(cb);   
   }
 
   async done() {
