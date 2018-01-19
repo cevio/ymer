@@ -11,11 +11,24 @@ module.exports = class SingleProcessPool {
     this._redis = null;
     this.cache = new Cache(this);
     this.stacks = [];
+    this.nexts = [];
   }
 
   ['catch'](obj) { 
     this.stacks.push(obj); 
     debug('Push an stack to this.stacks');
+  }
+
+  next(cb) {
+    this.afters.push(cb);   
+  }
+
+  async done() {
+    for (let i = 0; i < this.nexts.length; i++) {
+      if (typeof this.nexts[i] === 'function') {
+        await this.nexts[i]();
+      }
+    }
   }
 
   release() {
@@ -55,6 +68,7 @@ module.exports = class SingleProcessPool {
       await this._mysql.commit();
       debug('Commit mysql data');
     }
+    await this.done();
   }
 
   async rollback() {
