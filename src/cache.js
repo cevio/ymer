@@ -1,11 +1,10 @@
-const util = require('./util');
 const Multi = require('redis/lib/multi');
+const util = require('./util');
 
 module.exports = class Cache {
   constructor(yme) {
     this.yme = yme;
     this.cachePen = yme.pool.cache;
-    this.urlPen = yme.pool.uri;
   }
 
   async expire(name, time) {
@@ -16,87 +15,51 @@ module.exports = class Cache {
   }
 
   async delete(key, args) {
-    const { domain, pathname } = util.formatCacheKey(key);
-    const name = this.urlPen.select(domain, ...pathname).toString(args);
+    const deleteCallback = this.cachePen.get(key);
+    const pather = deleteCallback.ctx.compile(args);
     const redis = await this.yme.redis();
-    const exists = await redis.exists(name);
-
-    if (exists) {
-      await redis.del(name);
-    }
+    const exists = await this.compress(await redis.exists(pather));
+    if (exists) await redis.del(pather);
   }
 
-  async build(key, args, resource) {
-    const { domain, pathname } = util.formatCacheKey(key);
-    const name = this.urlPen.select(domain, ...pathname).toString(args);
-    const ret = this.cachePen.get(key);
+  async build(key, options = {}) {
+    const buildCallback = this.cachePen.get(key);
+    const pather = buildCallback.ctx.compile(options.args);
+    let resource = await buildCallback(this.yme, options);
 
-    if (ret) {
-      const redis = await this.yme.redis();
-      const result = await ret.fn(this.yme, args, resource);
-
-      // 当数据为有效数据的时候
-      if (util.isDef(result)) {
-        // 当数据不存以下参数
-        // 出现这种情况可能是由于直接拿的缓存数据来处理
-        // 不被允许的数据结构
-        if (!result.__Stringify__ && !result.__ArrayStringify__) {
-          // 如果是对象类型
-          if (typeof result === 'object') {
-            // 如果是数组
-            // 直接Stringify后存入
-            if (Array.isArray(result)) {
-              if (result.length) {
-                await redis.del(name);
-                await redis.hmset(name, {
-                  __ArrayStringify__: true,
-                  value: JSON.stringify(result)
-                });
-                await this.expire(name, ret.time);
-              }
-            }
-            // 如果是JSON对象
-            // 通过encode编码后存入
-            else {
-              if (Object.keys(result).length) {
-                try{await redis.del(name);}catch(e){}
-                await redis.hmset(name, util.encode(result));
-                await this.expire(name, ret.time);
-              }
-            }
-          }
-          // 其余任何类型直接转化为字符串存入
-          else {
-            await redis.del(name);
-            await redis.hmset(name, {
-              __Stringify__: util.type(result),
-              value: result
-            });
-            await this.expire(name, ret.time);
-          }
-        }
-        return result;
-      }
+    if (typeof resource === 'function') {
+      resource = await resource(buildCallback.ctx, this);
     }
+
+    if (util.isUnDef(resource)) return;
+
+    if (resource.__defineDataType__) {
+      return resource.__defineDataValue__;
+    }
+
+    const type = util.valueType(resource);
+    const data = buildCallback.ctx.toString(resource);
+
+    const insertData = {
+      __defineDataType__: type,
+      __defineDataValue__: data
+    }
+
+    const redis = await this.yme.redis();
+    await redis.hmset(pather, insertData);
+    await this.expire(pather, buildCallback.ctx.expire_time);
+
+    return resource;
   }
 
   async load(key, args) {
-    const { domain, pathname } = util.formatCacheKey(key);
-    const name = this.urlPen.select(domain, ...pathname).toString(args);
+    const loadCallback = this.cachePen.get(key);
+    const pather = loadCallback.ctx.compile(args);
     const redis = await this.yme.redis();
-    const exists = await this.compress(await redis.exists(name));
-    if (exists) {
-      const values = await this.compress(await redis.hgetall(name));
-      if (values.__Stringify__) {
-        return util.parse(values.__Stringify__, values.value);
-      } else if (values.__ArrayStringify__) {
-        return JSON.parse(values.value);
-      } else {
-        return util.decode(values);
-      }
-    } else {
-      return await this.build(key, args);
-    }
+    const exists = await this.compress(await redis.exists(pather));
+    if (!exists) return await this.build(key, { args });
+    const values = await this.compress(await redis.hgetall(pather));
+    return util.parse(values.__defineDataType__, values.__defineDataValue__);
   }
 
   async compress(values) {

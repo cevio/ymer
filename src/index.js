@@ -1,7 +1,6 @@
 require('promise-redis')();
 const MySQL = require('mysql');
 const redis = require('redis');
-const Uri = require('./uri');
 const Redis = require('node-redis-connection-pool');
 const SingleProcessPool = require('./pool');
 const debug = require('debug')('YMER');
@@ -10,7 +9,6 @@ const CachePen = require('./cache-pen');
 module.exports = class Ymer {
   constructor(options = {}) {
     this.cache = new CachePen();
-    this.uri = new Uri();
     this.redisPool = new Redis(options.redis);
     this.mysqlPool = MySQL.createPool(options.mysql);
     this.stacks = [];
