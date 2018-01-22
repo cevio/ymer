@@ -8,7 +8,7 @@ const CachePen = require('./cache-pen');
 
 module.exports = class Ymer {
   constructor(options = {}) {
-    this.cache = new CachePen();
+    this.cache = new CachePen(options.namespace);
     this.redisPool = new Redis(options.redis);
     this.mysqlPool = MySQL.createPool(options.mysql);
     this.stacks = [];
@@ -35,6 +35,12 @@ module.exports = class Ymer {
     }
   }
 
+  async create(next, options = {}) {
+    const ctx = {};
+    const mw = this.connect(options.name, options.error);
+    await mw(ctx, next);
+  }
+
   connect(name, error) {
     if (typeof name === 'function') {
       error = name;
@@ -43,10 +49,13 @@ module.exports = class Ymer {
 
     return async (ctx, next) => {
       const yme = ctx[name || 'yme'] = this.createPool();
+      let value;
       try{ 
-        debug('Url: %s', ctx.request.url);
+        if (ctx.request && ctx.request.url) {
+          debug('Url: %s', ctx.request.url);
+        }
         debug('Start middleware go next()');
-        await next(); 
+        value = await next(); 
         await yme.commit();
         debug('Try middleware success');
       }catch(e){
@@ -55,10 +64,12 @@ module.exports = class Ymer {
           error(ctx, e);
         }
         debug('Catch middleware runtime error', e);
+        value = e;
       }finally{
         this.destroyPool(yme);
         debug('Finally runtime close');
       }
+      return value;
     }
   }
 

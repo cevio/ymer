@@ -2,13 +2,15 @@ const pathToRegExp = require('path-to-regexp');
 const fastJson = require('fast-json-stringify');
 
 class context {
-  constructor(pather) {
+  constructor(pather, parent) {
     this.path_callback = pathToRegExp.compile(pather);
     this.expire_time = 0;
+    this.parent = parent;
   }
 
   compile(args = {}) {
-    return this.path_callback(args).replace(/\//g, ':');
+    const pather = this.path_callback(args).replace(/\//g, ':');
+    return `${this.parent.namespace}:${pather}`;
   }
 
   schema(options) {
@@ -29,16 +31,18 @@ class context {
 }
 
 module.exports = class CachePen {
-  constructor() {
+  constructor(namespace) {
     this.stacks = {};
+    this.namespace = namespace;
   }
 
   set(name, fn) {
     if (typeof fn !== 'function') {
       throw new Error('ymer set cache method must be a function.');
     }
-    fn.ctx = new context(name);
+    fn.ctx = new context(name, this);
     this.stacks[name] = fn;
+    return fn.ctx;
   }
 
   get(name) {
