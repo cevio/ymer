@@ -10,7 +10,7 @@ class context {
 
   compile(args = {}) {
     const pather = this.path_callback(args).replace(/\//g, ':');
-    return `${this.parent.namespace}:${pather}`;
+    return this.parent.namespace + pather;
   }
 
   schema(options) {
