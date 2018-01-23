@@ -59,10 +59,10 @@ module.exports = class Ymer {
     })
   }
 
-  async single(next) {
+  async exec(next) {
     const ctx = { pool: this, stacks: [] };
-    const mysql = _MYSQL(await this.createSingleMysqlConnection());
-    const redis = _REDIS(await this.createSingleRedisConnection());
+    const mysql = async () => ctx._mysql = _MYSQL(await this.createSingleMysqlConnection());
+    const redis = async () => ctx._redis = _REDIS(await this.createSingleRedisConnection());
     const cache = new Cache(ctx);
 
     ctx.mysql = mysql;
@@ -74,14 +74,14 @@ module.exports = class Ymer {
 
     try{ 
       await next(ctx);
-      await redis.commit();
-      await mysql.commit();
+      ctx._redis && await ctx._redis.commit();
+      ctx._mysql && await ctx._mysql.commit();
     }catch(e){
       for (let i = 0; i < ctx.stacks.length; i++) await ctx.stacks[i]();
-      await mysql.rollback();
+      ctx._mysql && await ctx._mysql.rollback();
     }finally{
-      redis.end();
-      mysql.destroy();
+      ctx._redis && ctx._redis.end();
+      ctx._mysql && ctx._mysql.destroy();
     }
   }
 

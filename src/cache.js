@@ -1,5 +1,6 @@
 const Multi = require('redis/lib/multi');
 const util = require('./util');
+const pathToRegExp = require('path-to-regexp');
 
 module.exports = class Cache {
   constructor(yme) {
@@ -60,6 +61,15 @@ module.exports = class Cache {
     await this.expire(pather, ctx.expire_time);
 
     return resource;
+  }
+
+  async loadonly(key, args = {}) {
+    const pather = pathToRegExp.compile(key)(args.args || {});
+    const redis = await this.yme.redis();
+    const exists = await this.compress(await redis.exists(pather));
+    if (!exists) return;
+    const values = await this.compress(await redis.hgetall(pather));
+    return util.parse(values.__defineDataType__, values.__defineDataValue__);
   }
 
   async load(key, args = {}) {
