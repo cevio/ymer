@@ -16,7 +16,7 @@ module.exports = class Cache {
 
   async delete(key, args) {
     const { ctx } = this.cachePen.get(key);
-    const pather = ctx.compile(args);
+    const pather = ctx.compile(args.args);
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
     if (exists) await redis.del(pather);
@@ -64,10 +64,10 @@ module.exports = class Cache {
 
   async load(key, args) {
     const { ctx } = this.cachePen.get(key);
-    const pather = ctx.compile(args);
+    const pather = ctx.compile(args.args);
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
-    if (!exists) return await this.build(key, { args });
+    if (!exists) return await this.build(key, args);
     const values = await this.compress(await redis.hgetall(pather));
     return util.parse(values.__defineDataType__, values.__defineDataValue__);
   }
