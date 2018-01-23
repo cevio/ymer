@@ -1,6 +1,6 @@
 {
   "name": "ymer",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "ymer: a mysql+redis framework for resolving auto pool manage",
   "main": "src/index.js",
   "scripts": {

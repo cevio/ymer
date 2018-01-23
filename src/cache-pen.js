@@ -22,6 +22,8 @@ class context {
   toString(object) {
     if (this.stringify) {
       return this.stringify(object);
+    } else {
+      return JSON.stringify(object);
     }
   }
 
