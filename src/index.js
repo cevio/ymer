@@ -7,12 +7,17 @@ const debug = require('debug')('YMER');
 const CachePen = require('./cache-pen');
 const compose = require('koa-compose');
 
+const _MYSQL = require('./mysql');
+const _REDIS = require('./redis');
+const Cache = require('./cache');
+
 module.exports = class Ymer {
   constructor(options = {}) {
     this.cache = new CachePen(options.redis.name);
     this.redisPool = new Redis(options.redis);
     this.mysqlPool = MySQL.createPool(options.mysql);
     this.stacks = [];
+    this.options = options;
   }
 
   get length() {
@@ -33,6 +38,50 @@ module.exports = class Ymer {
       this.stacks[index].release();
       this.stacks.splice(index, 1);
       debug('Destroy the process for user');
+    }
+  }
+
+  async createSingleMysqlConnection() {
+    return await new Promise((resolve, reject) => {
+      const mysql = MySQL.createConnection(this.options.mysql);
+      mysql.connect(err => {
+        if (err) return reject(err);
+        resolve(mysql);
+      })
+    })
+  }
+  
+  async createSingleRedisConnection() {
+    return await new Promise((resolve, reject) => {
+      const _redis = redis.createClient(this.options.reids.redisOptions);
+      _redis.on('ready', () => resolve(_reids));
+      _redis.on('error', reject);
+    })
+  }
+
+  async single(next) {
+    const ctx = { pool: this, stacks: [] };
+    const mysql = _MYSQL(await this.createSingleMysqlConnection());
+    const redis = _REDIS(await this.createSingleRedisConnection());
+    const cache = new Cache(ctx);
+
+    ctx.mysql = mysql;
+    ctx.redis = redis;
+    ctx.cache = cache;
+    ctx.catch = function(obj) { 
+      ctx.stacks.push(obj);
+    }
+
+    try{ 
+      await next(ctx);
+      await redis.commit();
+      await mysql.commit();
+    }catch(e){
+      for (let i = 0; i < ctx.stacks.length; i++) await ctx.stacks[i]();
+      await mysql.rollback();
+    }finally{
+      redis.end();
+      mysql.destroy();
     }
   }
 
