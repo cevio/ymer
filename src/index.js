@@ -8,7 +8,7 @@ const CachePen = require('./cache-pen');
 
 module.exports = class Ymer {
   constructor(options = {}) {
-    this.cache = new CachePen(options.namespace);
+    this.cache = new CachePen(options.redis.name);
     this.redisPool = new Redis(options.redis);
     this.mysqlPool = MySQL.createPool(options.mysql);
     this.stacks = [];
