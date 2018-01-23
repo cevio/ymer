@@ -28,7 +28,7 @@ module.exports = class Cache {
     let resource = await fn(this.yme, options);
 
     if (typeof resource === 'function') {
-      resource = await resource(buildCallback.ctx, this);
+      resource = await resource(ctx, this);
     }
 
     if (util.isUnDef(resource)) {
