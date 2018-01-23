@@ -5,6 +5,7 @@ const Redis = require('node-redis-connection-pool');
 const SingleProcessPool = require('./pool');
 const debug = require('debug')('YMER');
 const CachePen = require('./cache-pen');
+const compose = require('koa-compose');
 
 module.exports = class Ymer {
   constructor(options = {}) {
@@ -37,7 +38,8 @@ module.exports = class Ymer {
 
   async create(ctx = {}, next, options = {}) {
     const mw = this.connect(options.name, options.error);
-    await mw(ctx, next);
+    const composeCallback = compose([mw, next]);
+    await composeCallback(ctx);
   }
 
   connect(name, error) {

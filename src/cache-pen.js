@@ -43,9 +43,11 @@ module.exports = class CachePen {
     if (typeof fn !== 'function') {
       throw new Error('ymer set cache method must be a function.');
     }
-    fn.ctx = new context(name, this);
-    this.stacks[name] = fn;
-    return fn.ctx;
+    this.stacks[name] = {
+      fn,
+      ctx: new context(name, this)
+    };
+    return this.stacks[name].ctx;
   }
 
   get(name) {

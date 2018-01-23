@@ -15,25 +15,25 @@ module.exports = class Cache {
   }
 
   async delete(key, args) {
-    const deleteCallback = this.cachePen.get(key);
-    const pather = deleteCallback.ctx.compile(args);
+    const { ctx } = this.cachePen.get(key);
+    const pather = ctx.compile(args);
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
     if (exists) await redis.del(pather);
   }
 
   async build(key, options = {}) {
-    const buildCallback = this.cachePen.get(key);
-    const pather = buildCallback.ctx.compile(options.args);
-    let resource = await buildCallback(this.yme, options);
+    const { fn, ctx } = this.cachePen.get(key);
+    const pather = ctx.compile(options.args);
+    let resource = await fn(this.yme, options);
 
     if (typeof resource === 'function') {
       resource = await resource(buildCallback.ctx, this);
     }
 
     if (util.isUnDef(resource)) {
-      if (buildCallback.ctx.stringify && buildCallback.ctx.stringify.__defaultType__) {
-        switch (buildCallback.ctx.stringify.__defaultType__) {
+      if (ctx.stringify && ctx.stringify.__defaultType__) {
+        switch (ctx.stringify.__defaultType__) {
           case 'object': return {};
           case 'array': return [];
           case 'null': return null;
@@ -47,8 +47,8 @@ module.exports = class Cache {
       return resource.__defineDataValue__;
     }
 
-    const type = util.valueType(resource);
-    const data = buildCallback.ctx.toString(resource);
+    const type = util.type(resource);
+    const data = ctx.toString(resource);
 
     const insertData = {
       __defineDataType__: type,
@@ -57,14 +57,14 @@ module.exports = class Cache {
 
     const redis = await this.yme.redis();
     await redis.hmset(pather, insertData);
-    await this.expire(pather, buildCallback.ctx.expire_time);
+    await this.expire(pather, ctx.expire_time);
 
     return resource;
   }
 
   async load(key, args) {
-    const loadCallback = this.cachePen.get(key);
-    const pather = loadCallback.ctx.compile(args);
+    const { ctx } = this.cachePen.get(key);
+    const pather = ctx.compile(args);
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
     if (!exists) return await this.build(key, { args });
