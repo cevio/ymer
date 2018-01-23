@@ -14,9 +14,9 @@ module.exports = class Cache {
     }
   }
 
-  async delete(key, args) {
+  async delete(key, args = {}) {
     const { ctx } = this.cachePen.get(key);
-    const pather = ctx.compile(args.args);
+    const pather = ctx.compile(args.args || {});
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
     if (exists) await redis.del(pather);
@@ -24,7 +24,7 @@ module.exports = class Cache {
 
   async build(key, options = {}) {
     const { fn, ctx } = this.cachePen.get(key);
-    const pather = ctx.compile(options.args);
+    const pather = ctx.compile(options.args || {});
     let resource = await fn(this.yme, options);
 
     if (typeof resource === 'function') {
@@ -62,9 +62,9 @@ module.exports = class Cache {
     return resource;
   }
 
-  async load(key, args) {
+  async load(key, args = {}) {
     const { ctx } = this.cachePen.get(key);
-    const pather = ctx.compile(args.args);
+    const pather = ctx.compile(args.args || {});
     const redis = await this.yme.redis();
     const exists = await this.compress(await redis.exists(pather));
     if (!exists) return await this.build(key, args);
