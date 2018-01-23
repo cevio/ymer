@@ -15,6 +15,7 @@ class context {
 
   schema(options) {
     this.stringify = fastJson(options);
+    this.stringify.__defaultType__ = options.type;
     return this;
   }
 

@@ -31,7 +31,17 @@ module.exports = class Cache {
       resource = await resource(buildCallback.ctx, this);
     }
 
-    if (util.isUnDef(resource)) return;
+    if (util.isUnDef(resource)) {
+      if (buildCallback.ctx.stringify && buildCallback.ctx.stringify.__defaultType__) {
+        switch (buildCallback.ctx.stringify.__defaultType__) {
+          case 'object': return {};
+          case 'array': return [];
+          case 'null': return null;
+          default: return;
+        }
+      }
+      return;
+    }
 
     if (resource.__defineDataType__) {
       return resource.__defineDataValue__;
