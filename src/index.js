@@ -35,8 +35,7 @@ module.exports = class Ymer {
     }
   }
 
-  async create(next, options = {}) {
-    const ctx = {};
+  async create(ctx = {}, next, options = {}) {
     const mw = this.connect(options.name, options.error);
     await mw(ctx, next);
   }
