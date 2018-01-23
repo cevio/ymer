@@ -52,18 +52,12 @@ function en_parse(value) {
 }
 
 function de_parse(type, _value) {
-  let value;
+  _value = JSON.parse(_value);
   switch (type) {
     case 'number': value = Number(_value); break;
-    case 'boolean': value = _value === 'true' ? true : false; break;
-    case 'date': value = new Date(Number(_value)); break;
-    case 'object':
-    case 'array': value = JSON.parse(_value); break;
-    case 'null': value = null; break;
-    case 'undefined': value = undefined; break;
-    default: value = _value;
+    case 'date': value = new Date(_value); break;
   }
-  return value;
+  return _value;
 }
 
 function de_format(value) {
