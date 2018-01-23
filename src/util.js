@@ -54,8 +54,8 @@ function en_parse(value) {
 function de_parse(type, _value) {
   _value = JSON.parse(_value);
   switch (type) {
-    case 'number': value = Number(_value); break;
-    case 'date': value = new Date(_value); break;
+    case 'number': _value = Number(_value); break;
+    case 'date': _value = new Date(_value); break;
   }
   return _value;
 }
