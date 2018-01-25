@@ -17,6 +17,20 @@ module.exports = async function(app, config) {
 
   app.nodebase.Cache = Cache;
   app.ymer = ymer;
+
+  const keys = Object.keys(config);
+  let i = keys.length;
+  while (i--) {
+    switch (keys[i]) {
+      case 'mysql': ymer.use('mysql', Ymer.MySQL); break;
+      case 'redis': ymer.use('mysql', Ymer.Redis); break;
+      case 'cache': ymer.use('cache', Ymer.Cache); break;
+      default:
+        if (config[keys[i]] && config[keys[i]].classic) {
+          ymer.use(keys[i], config[keys[i]].classic);
+        }
+    }
+  }
   
   app.on('app:beforeServerStart', async () => await ymer.connect());
   app.on('beforeDestroy', async () => await app.ymer.disconnect());
