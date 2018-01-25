@@ -2,11 +2,10 @@ const Ymer = require('./lib');
 const fs = require('fs');
 
 module.exports = async function(agent) {
-  const ymer = new Ymer(config);
+  const config = agent.config;
+  const ymer = new Ymer(config.widgets);
   agent.ymer = ymer;
   agent.on('beforeDestroy', async () => await ymer.disconnect());
-
-  const config = agent.config;
   if (config.widgets) {
     const keys = Object.keys(config.widgets);
     let i = keys.length;

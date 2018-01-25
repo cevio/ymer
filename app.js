@@ -2,7 +2,7 @@ const Ymer = require('./lib');
 const fs = require('fs');
 
 module.exports = async function(app, config) {
-  const ymer = new Ymer(config);
+  const ymer = new Ymer(config.widgets);
 
   class Cache extends app.nodebase.Basic {
     constructor(ctx) {
@@ -24,7 +24,7 @@ module.exports = async function(app, config) {
     while (i--) {
       switch (keys[i]) {
         case 'mysql': ymer.use('mysql', Ymer.MySQL); break;
-        case 'redis': ymer.use('mysql', Ymer.Redis); break;
+        case 'redis': ymer.use('redis', Ymer.Redis); break;
         case 'cache': ymer.use('cache', Ymer.Cache); break;
         default:
           if (config.widgets[keys[i]] && config.widgets[keys[i]].basic) {
@@ -34,7 +34,8 @@ module.exports = async function(app, config) {
     }
   }
   
-  app.on('app:beforeServerStart', async () => await ymer.connect());
+  await ymer.connect();
+
   app.on('beforeDestroy', async () => await app.ymer.disconnect());
 
   app.preload(() => {
