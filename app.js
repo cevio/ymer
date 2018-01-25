@@ -26,8 +26,8 @@ module.exports = async function(app, config) {
       case 'redis': ymer.use('mysql', Ymer.Redis); break;
       case 'cache': ymer.use('cache', Ymer.Cache); break;
       default:
-        if (config[keys[i]] && config[keys[i]].classic) {
-          ymer.use(keys[i], config[keys[i]].classic);
+        if (config[keys[i]] && config[keys[i]].basic) {
+          ymer.use(keys[i], config[keys[i]].basic);
         }
     }
   }
