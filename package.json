@@ -1,6 +1,6 @@
 {
   "name": "ymer",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ymer: a mysql+redis framework for resolving auto pool manage",
   "main": "lib/index.js",
   "repository": {
@@ -20,6 +20,9 @@
     "koa-router": "^7.3.0"
   },
   "nodebasePlugin": {
-    "name": "ymer"
+    "name": "ymer",
+    "dependencies": [
+      "health"
+    ]
   }
 }
