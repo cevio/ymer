@@ -25,6 +25,7 @@ module.exports = async function(agent) {
 
   let mysqlStatus = true;
   let mysqlValue = 0;
+  let mysqlLastCheckTime = null;
 
   const timer = setInterval(() => {
     ymer.exec(async (yme) => {
@@ -32,6 +33,7 @@ module.exports = async function(agent) {
       const res = await mysql.exec(`select COUNT(table_name) AS Count from information_schema.tables where table_schema='${config.widgets.mysql.database}'`);
       mysqlValue = res[0].Count;
       mysqlStatus = true;
+      mysqlLastCheckTime = new Date();
     }, async () => {
       mysqlStatus = false;
       mysqlValue = 0;
@@ -42,8 +44,8 @@ module.exports = async function(agent) {
     return {
       key: 'mysql',
       value: mysqlStatus 
-        ? { status: 'UP', count: mysqlValue } 
-        : { status: 'OUT_OF_SERVICE', count: mysqlValue }
+        ? { status: 'UP', count: mysqlValue, last_check_time: mysqlLastCheckTime } 
+        : { status: 'OUT_OF_SERVICE', count: mysqlValue, last_check_time: mysqlLastCheckTime }
     }
   });
 
