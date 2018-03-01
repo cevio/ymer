@@ -2,6 +2,7 @@ const Ymer = require('./lib');
 const fs = require('fs');
 
 module.exports = async function(agent) {
+  const app = agent.parent.parent;
   const config = agent.config;
   const ymer = new Ymer(config.widgets);
   agent.ymer = ymer;
@@ -21,21 +22,28 @@ module.exports = async function(agent) {
     }
   }
   await ymer.connect();
-  
+
   let mysqlStatus = true;
+  let mysqlValue = 0;
 
   const timer = setInterval(() => {
     ymer.exec(async (yme) => {
       const mysql = await yme.mysql();
-      await mysql.exec(`select COUNT(table_name) from information_schema.tables where table_schema='${config.widgets.mysql.database}'`);
+      const res = await mysql.exec(`select COUNT(table_name) AS Count from information_schema.tables where table_schema='${config.widgets.mysql.database}'`);
+      mysqlValue = res[0].Count;
       mysqlStatus = true;
-    }, async () => mysqlStatus = false);
+    }, async () => {
+      mysqlStatus = false;
+      mysqlValue = 0;
+    });
   }, 1 * 60 * 1000);
   
-  agent.health.add(async () => {
+  app.health.add(async () => {
     return {
       key: 'mysql',
-      value: mysqlStatus ? { status: 'UP' } : { status: 'OUT_OF_SERVICE' }
+      value: mysqlStatus 
+        ? { status: 'UP', count: mysqlValue } 
+        : { status: 'OUT_OF_SERVICE', count: mysqlValue }
     }
   });
 
