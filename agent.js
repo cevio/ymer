@@ -26,19 +26,10 @@ module.exports = async function(agent) {
   let mysqlStatus = true;
   let mysqlValue = 0;
   let mysqlLastCheckTime = null;
+  let redisStatus = true;
+  let redisLastCheckTime = null;
 
-  const timer = setInterval(() => {
-    ymer.exec(async (yme) => {
-      const mysql = await yme.mysql();
-      const res = await mysql.exec(`select COUNT(table_name) AS Count from information_schema.tables where table_schema='${config.widgets.mysql.database}'`);
-      mysqlValue = res[0].Count;
-      mysqlStatus = true;
-      mysqlLastCheckTime = new Date();
-    }, async () => {
-      mysqlStatus = false;
-      mysqlValue = 0;
-    });
-  }, 1 * 60 * 1000);
+  const timer = setInterval(task, 1 * 60 * 1000);
   
   app.health.add(async () => {
     return {
@@ -49,8 +40,44 @@ module.exports = async function(agent) {
     }
   });
 
+  app.health.add(async () => {
+    return {
+      key: 'redis',
+      value: redisStatus 
+        ? { status: 'UP', last_check_time: redisLastCheckTime } 
+        : { status: 'OUT_OF_SERVICE', last_check_time: redisLastCheckTime }
+    }
+  });
+
+  agent.on('mounted', task);
   agent.on('beforeDestroy', async () => {
     clearInterval(timer);
     await ymer.disconnect();
   });
+
+  async function task() {
+    await ymer.exec(async (yme) => {
+      const time = new Date();
+
+      try {
+        const mysql = await yme.mysql();
+        const res = await mysql.exec(`select COUNT(table_name) AS Count from information_schema.tables where table_schema='${config.widgets.mysql.database}'`);
+        mysqlValue = res[0].Count;
+        mysqlStatus = true;
+      } catch(e) { 
+        mysqlStatus = false;
+        mysqlValue = 0;
+      }
+      
+      try {
+        const redis = yme.redis();
+        await redis.set(`${config.widgets.redis.name}:sys:check`, time.getTime() + '');
+        redisStatus = true;
+      } catch(e) {
+        redisStatus = false;
+      }
+
+      redisLastCheckTime = mysqlLastCheckTime = time;
+    });
+  }
 }
