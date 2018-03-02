@@ -12,7 +12,7 @@ module.exports = async function(agent) {
     while (i--) {
       switch (keys[i]) {
         case 'mysql': ymer.use('mysql', Ymer.MySQL); break;
-        case 'redis': ymer.use('mysql', Ymer.Redis); break;
+        case 'redis': ymer.use('redis', Ymer.Redis); break;
         case 'cache': ymer.use('cache', Ymer.Cache); break;
         default:
           if (config.widgets[keys[i]] && config.widgets[keys[i]].basic) {
@@ -49,8 +49,8 @@ module.exports = async function(agent) {
     }
   });
 
-  agent.on('mounted', task);
-  agent.on('beforeDestroy', async () => {
+  app.on('mounted', task);
+  app.on('beforeDestroy', async () => {
     clearInterval(timer);
     await ymer.disconnect();
   });
@@ -70,8 +70,8 @@ module.exports = async function(agent) {
       }
       
       try {
-        const redis = yme.redis();
-        await redis.set(`${config.widgets.redis.name}:sys:check`, time.getTime() + '');
+        const redis = await yme.redis();
+        await redis.set(`${config.widgets.redis.name}:sys:alive`, time.getTime() + '');
         redisStatus = true;
       } catch(e) {
         redisStatus = false;
